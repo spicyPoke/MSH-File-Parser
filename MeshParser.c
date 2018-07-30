@@ -72,6 +72,16 @@ typedef struct
 }ElementInfo;
 ElementInfo* elementsInfo = NULL;
 
+//Indicator-Nodes-Element (INE) Info struct
+typedef struct
+{
+    int indicator;
+    int nodes[2];
+    int element;
+    int edgeNumber;
+}IneInfo;
+IneInfo* ineInfo;
+
 int versionCodeMacro = 0;
 int versionCodeMicro = 0;
 int fileType = 0;
@@ -79,12 +89,17 @@ int dataSize = 0;
 
 int nodesCount = 0;
 int elementsCount = 0;
+int ineArrayLength = 0;
 int physicalNamesCount = 0;
 
 
 const char* physicalNameKeyword = "$PhysicalNames";
 const char* physicalNameEndKeyword = "$EndPhysicalNames";
 
+int compare_indicator(const void* a, const void* b)
+{
+    return ((IneInfo*)a)->indicator - ((IneInfo*)b)->indicator;
+}
 
 int count_string_length(const char* str)
 {
@@ -121,6 +136,13 @@ void free_memory_()
         printf("Freeing elementsInfo...\n");
         free(elementsInfo);
         elementsInfo = NULL;
+    }
+
+    if(ineInfo)
+    {
+        printf("Freeing ineInfo...\n");
+        free(ineInfo);
+        ineInfo = NULL;
     }
 }
 
@@ -282,9 +304,58 @@ void retrieve_read_data_(PhysicalNameInfo* out_physicalNamesInfo, NodeInfo* out_
     }
 }
 
-/* This section is not required unless you want to debug the code
+//Currently only works with _3_NODE_TRIANGLE
+void create_ine_array_()
+{
+    int i, j;
+    ineArrayLength = elementsCount * 3;
+    ineInfo = (IneInfo*) calloc(ineArrayLength, sizeof(IneInfo));
+    for(i = 0; i < elementsCount; i++)
+    {
+        for(j = 0; j < 3; j++)
+        {
+            ineInfo[i * 3 + j].element = elementsInfo[i].number;
+            ineInfo[i * 3 + j].nodes[0] = elementsInfo[i].nodes[j];
+            ineInfo[i * 3 + j].nodes[1] = j + 1 < 3 ? elementsInfo[i].nodes[j + 1] : elementsInfo[i].nodes[0];
+            ineInfo[i * 3 + j].indicator = ineInfo[i * 3 + j].nodes[0] * ineInfo[i * 3 + j].nodes[1];
+        }
+    }
+}
+
+void sort_ine_array_()
+{
+    qsort(ineInfo, ineArrayLength, sizeof(IneInfo), compare_indicator);
+}
+
+void add_number_label_to_edges_()
+{
+    int i;
+    int previousIndicator = 0;
+    int label = 0;
+    for(i = 0; i < ineArrayLength; i++)
+    {
+        if(ineInfo[i].indicator != previousIndicator)
+        {
+            previousIndicator = ineInfo[i].indicator;
+            label++;
+        }
+        ineInfo[i].edgeNumber = label;
+    }
+}
+
+// This section is not required unless you want to debug the code
 int main (int argc, char** argv)
 {
-    parse_input_file_();
+    int i;
+    int dummy;
+    parse_input_file_(&dummy, &dummy, &dummy);
+    create_ine_array_();
+    sort_ine_array_();
+    add_number_label_to_edges_();
+    printf("indicator\tnodes\telement\tedge number\n");
+    for(i = 0; i < ineArrayLength; i++)
+    {
+        printf("\t%d\t  %d %d\t  %d\t  %d\n", ineInfo[i].indicator, ineInfo[i].nodes[0], ineInfo[i].nodes[1], ineInfo[i].element, ineInfo[i].edgeNumber);
+    }
 }
-*/
+

@@ -10,7 +10,7 @@
 			"request": "launch",
 			"program": "${workspaceFolder}/_build/MeshParser",
 			"args": [],
-			"stopAtEntry": false,
+			"stopAtEntry": true,
 			"cwd": "${workspaceFolder}/_build/",
 			"environment": [],
 			"externalConsole": true,
