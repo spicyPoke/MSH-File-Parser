@@ -191,7 +191,6 @@ void parse_input_file_(int* out_physicalNamesCount, int* out_nodesCount, int* ou
             fseek(file, seekPos, SEEK_SET);
         }
 
-
         //Nodes
         fscanf(file, "$Nodes\n");
         fscanf(file, "%d\n", &nodesCount);
@@ -290,34 +289,80 @@ void parse_input_file_(int* out_physicalNamesCount, int* out_nodesCount, int* ou
 void retrieve_read_data_(PhysicalNameInfo* out_physicalNamesInfo, NodeInfo* out_nodesInfo, ElementInfo* out_elementsInfo)
 {
     int i;
-    for(i = 0; i < physicalNamesCount; i++)
-    {
-        out_physicalNamesInfo[i] = physicalNamesInfo[i];
-    }
+    printf("Assigning nodes data to fortran...\n");
     for(i = 0; i < nodesCount; i++)
     {
-        out_nodesInfo[i] = nodesInfo[i];
+        printf("node %d: [%f, %f, %f]\n", nodesInfo[i].number, nodesInfo[i].x, nodesInfo[i].y, nodesInfo[i].z);
     }
-    for(i = 0; i < elementsCount; i++)
+    out_physicalNamesInfo = physicalNamesInfo;
+    out_nodesInfo = nodesInfo;
+    out_elementsInfo = elementsInfo;
+}
+
+void retrieve_node_info_(int* index, int* node_num, float* node_x, float* node_y, float* node_z)
+{
+    *node_num = nodesInfo[*index - 1].number;
+    *node_x = nodesInfo[*index - 1].x;
+    *node_y = nodesInfo[*index - 1].y;
+    *node_z = nodesInfo[*index - 1].z;
+}
+
+void retrieve_physical_name_info_(int* index, int* physical_name_dimension, int* physical_name_number, char* name)
+{
+    int i;
+    *physical_name_dimension = physicalNamesInfo[*index - 1].dimension;
+    *physical_name_number = physicalNamesInfo[*index - 1].physicalNumber;
+    for(i = 0; i < 32; i++)
     {
-        out_elementsInfo[i] = elementsInfo[i];
+        name[i] = physicalNamesInfo[*index - 1].name[i];
     }
+}
+
+void retrieve_element_info_(int* index, int* element_number, int* element_type, int* element_tagCount, int* element_tags, int* element_nodes)
+{
+    int i;
+    *element_number = elementsInfo[*index - 1].number;
+    *element_type = elementsInfo[*index - 1].type;
+    *element_tagCount = elementsInfo[*index - 1].tagCount;
+    for(i = 0; i < 10; i++)
+    {
+        element_tags[i] = elementsInfo[*index - 1].tags[i];
+    }
+    
+    for(i = 0; i < 8; i++)
+    {
+        element_nodes[i] = elementsInfo[*index - 1].nodes[i];
+    }
+}
+
+void retrieve_ine_array_(int* index, int* ine_indicator, int* ine_nodes, int* ine_element, int* ine_edgeNumber)
+{
+    *ine_indicator = ineInfo[*index - 1].indicator;
+    ine_nodes[0] = ineInfo[*index - 1].nodes[0];
+    ine_nodes[1] = ineInfo[*index - 1].nodes[1];
+    *ine_element = ineInfo[*index - 1].element;
+    *ine_edgeNumber = ineInfo[*index - 1].edgeNumber;
 }
 
 //Currently only works with _3_NODE_TRIANGLE
 void create_ine_array_()
 {
     int i, j;
+    int k = 0;
     ineArrayLength = elementsCount * 3;
     ineInfo = (IneInfo*) calloc(ineArrayLength, sizeof(IneInfo));
     for(i = 0; i < elementsCount; i++)
     {
-        for(j = 0; j < 3; j++)
+        if(elementsInfo[i].type == _3_NODE_TRIANGLE)
         {
-            ineInfo[i * 3 + j].element = elementsInfo[i].number;
-            ineInfo[i * 3 + j].nodes[0] = elementsInfo[i].nodes[j];
-            ineInfo[i * 3 + j].nodes[1] = j + 1 < 3 ? elementsInfo[i].nodes[j + 1] : elementsInfo[i].nodes[0];
-            ineInfo[i * 3 + j].indicator = ineInfo[i * 3 + j].nodes[0] * ineInfo[i * 3 + j].nodes[1];
+            for(j = 0; j < 3; j++)
+            {
+                ineInfo[k * 3 + j].element = elementsInfo[i].number;
+                ineInfo[k * 3 + j].nodes[0] = elementsInfo[i].nodes[j];
+                ineInfo[k * 3 + j].nodes[1] = j + 1 < 3 ? elementsInfo[i].nodes[j + 1] : elementsInfo[i].nodes[0];
+                ineInfo[k * 3 + j].indicator = ineInfo[i * 3 + j].nodes[0] * ineInfo[i * 3 + j].nodes[1];
+            }
+            k++;
         }
     }
 }
@@ -327,11 +372,13 @@ void sort_ine_array_()
     qsort(ineInfo, ineArrayLength, sizeof(IneInfo), compare_indicator);
 }
 
-void add_number_label_to_edges_()
+void label_the_edges_()
 {
     int i;
     int previousIndicator = 0;
     int label = 0;
+    create_ine_array_();
+    sort_ine_array_();
     for(i = 0; i < ineArrayLength; i++)
     {
         if(ineInfo[i].indicator != previousIndicator)
@@ -343,19 +390,23 @@ void add_number_label_to_edges_()
     }
 }
 
-// This section is not required unless you want to debug the code
-int main (int argc, char** argv)
-{
-    int i;
-    int dummy;
-    parse_input_file_(&dummy, &dummy, &dummy);
-    create_ine_array_();
-    sort_ine_array_();
-    add_number_label_to_edges_();
-    printf("indicator\tnodes\telement\tedge number\n");
-    for(i = 0; i < ineArrayLength; i++)
-    {
-        printf("\t%d\t  %d %d\t  %d\t  %d\n", ineInfo[i].indicator, ineInfo[i].nodes[0], ineInfo[i].nodes[1], ineInfo[i].element, ineInfo[i].edgeNumber);
-    }
-}
+// // This section is not required unless you want to debug the code
+// int main (int argc, char** argv)
+// {
+//     // int i;
+//     // int dummy;
+//     // parse_input_file_(&dummy, &dummy, &dummy);
+//     // create_ine_array_();
+//     // sort_ine_array_();
+//     // add_number_label_to_edges_();
+//     // printf("indicator\tnodes\telement\tedge number\n");
+//     // for(i = 0; i < ineArrayLength; i++)
+//     // {
+//     //     printf("\t%d\t  %d %d\t  %d\t  %d\n", ineInfo[i].indicator, ineInfo[i].nodes[0], ineInfo[i].nodes[1], ineInfo[i].element, ineInfo[i].edgeNumber);
+//     // }
+
+//     int a, b, c;
+
+//     c = add(a, b);
+// }
 
