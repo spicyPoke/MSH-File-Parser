@@ -42,7 +42,8 @@ enum elementTypes
     _4_NODE_TETRAHEDRON,
     _8_NODE_HEXAHEDRON,
     _6_NODE_PRISM,
-    _5_NODE_PYRAMID
+    _5_NODE_PYRAMID,
+    _1_NODE_POINT = 15
 };
 
 typedef struct 
@@ -156,7 +157,7 @@ void parse_input_file_(int* out_physicalNamesCount, int* out_nodesCount, int* ou
 
     //Make sure that there's no memory leak
     free_memory_();
-    FILE* file = fopen("./../Input/Curvature.msh", "r");
+    FILE* file = fopen("./../Input/rectangular baru.msh", "r");
     if(file)
     {
         printf("START READING FILE...\n");
@@ -220,6 +221,13 @@ void parse_input_file_(int* out_physicalNamesCount, int* out_nodesCount, int* ou
             }
             switch(elementsInfo[i].type)
             {
+                case _1_NODE_POINT:
+                {
+                    for(k = 0; k < 1; k++)
+                    {
+                        fscanf(file, "%d", &(elementsInfo[i].nodes[k]));
+                    }
+                }break;
                 case _2_NODE_LINE:
                 {
                     for(k = 0; k < 2; k++)
@@ -347,7 +355,7 @@ void create_ine_array_()
                 ineInfo[k * 3 + j].element = elementsInfo[i].number;
                 ineInfo[k * 3 + j].nodes[0] = elementsInfo[i].nodes[j];
                 ineInfo[k * 3 + j].nodes[1] = j + 1 < 3 ? elementsInfo[i].nodes[j + 1] : elementsInfo[i].nodes[0];
-                ineInfo[k * 3 + j].indicator = ineInfo[i * 3 + j].nodes[0] * ineInfo[i * 3 + j].nodes[1];
+                ineInfo[k * 3 + j].indicator = ineInfo[k * 3 + j].nodes[0] * ineInfo[k * 3 + j].nodes[1];
             }
             k++;
         }
@@ -390,23 +398,17 @@ void label_the_edges_()
 //     out_elementsInfo = elementsInfo;
 // }
 
-// // This section is not required unless you want to debug the code
+//This section is not required unless you want to debug the code
 // int main (int argc, char** argv)
 // {
-//     // int i;
-//     // int dummy;
-//     // parse_input_file_(&dummy, &dummy, &dummy);
-//     // create_ine_array_();
-//     // sort_ine_array_();
-//     // add_number_label_to_edges_();
-//     // printf("indicator\tnodes\telement\tedge number\n");
-//     // for(i = 0; i < ineArrayLength; i++)
-//     // {
-//     //     printf("\t%d\t  %d %d\t  %d\t  %d\n", ineInfo[i].indicator, ineInfo[i].nodes[0], ineInfo[i].nodes[1], ineInfo[i].element, ineInfo[i].edgeNumber);
-//     // }
-
-//     int a, b, c;
-
-//     c = add(a, b);
+//     int i;
+//     int dummy;
+//     parse_input_file_(&dummy, &dummy, &dummy);
+//     label_the_edges_();
+//     printf("indicator\tnodes\telement\tedge number\n");
+//     for(i = 0; i < ineArrayLength; i++)
+//     {
+//         printf("\t%d\t  %d %d\t  %d\t  %d\n", ineInfo[i].indicator, ineInfo[i].nodes[0], ineInfo[i].nodes[1], ineInfo[i].element, ineInfo[i].edgeNumber);
+//     }
 // }
 

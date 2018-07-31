@@ -70,7 +70,4 @@ do i = 1, (elements_count * 3)
     ", ", ines_info(i)%nodes(2), ", ", ines_info(i)%element, ", ", ines_info(i)%edge_number,"]"  
 end do
 
-print *, physical_names_count
-print *, nodes_count
-print *, elements_count
 end program parser
