@@ -286,19 +286,6 @@ void parse_input_file_(int* out_physicalNamesCount, int* out_nodesCount, int* ou
     }
 }
 
-void retrieve_read_data_(PhysicalNameInfo* out_physicalNamesInfo, NodeInfo* out_nodesInfo, ElementInfo* out_elementsInfo)
-{
-    int i;
-    printf("Assigning nodes data to fortran...\n");
-    for(i = 0; i < nodesCount; i++)
-    {
-        printf("node %d: [%f, %f, %f]\n", nodesInfo[i].number, nodesInfo[i].x, nodesInfo[i].y, nodesInfo[i].z);
-    }
-    out_physicalNamesInfo = physicalNamesInfo;
-    out_nodesInfo = nodesInfo;
-    out_elementsInfo = elementsInfo;
-}
-
 void retrieve_node_info_(int* index, int* node_num, float* node_x, float* node_y, float* node_z)
 {
     *node_num = nodesInfo[*index - 1].number;
@@ -389,6 +376,19 @@ void label_the_edges_()
         ineInfo[i].edgeNumber = label;
     }
 }
+
+// void retrieve_read_data_(PhysicalNameInfo* out_physicalNamesInfo, NodeInfo* out_nodesInfo, ElementInfo* out_elementsInfo)
+// {
+//     int i;
+//     printf("Assigning nodes data to fortran...\n");
+//     for(i = 0; i < nodesCount; i++)
+//     {
+//         printf("node %d: [%f, %f, %f]\n", nodesInfo[i].number, nodesInfo[i].x, nodesInfo[i].y, nodesInfo[i].z);
+//     }
+//     out_physicalNamesInfo = physicalNamesInfo;
+//     out_nodesInfo = nodesInfo;
+//     out_elementsInfo = elementsInfo;
+// }
 
 // // This section is not required unless you want to debug the code
 // int main (int argc, char** argv)
