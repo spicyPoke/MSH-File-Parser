@@ -469,21 +469,21 @@ void label_the_edges_()
 //     out_elementsInfo = elementsInfo;
 // }
 
-//This section is not required unless you want to debug the code
-int main (int argc, char** argv)
-{
-    int i;
-    int dummy;
-    parse_input_file_(&dummy, &dummy, &dummy);
-    label_the_edges_();
-    for(i = 0; i < ineArrayLength; i++)
-    {
-        printf("%d\t%d\t%d\t%d\n", ineInfo[i].element, ineInfo[i].nodes[0], ineInfo[i].nodes[1], ineInfo[i].edgeNumber);
-    }
-    printf("element\t\tedge number (1) (2) (3)\n");
-    for(i = 0; i < elementsCount; i++)
-    {
-        printf("\t%d", el2edInfo[i].element);
-        printf("\t\t%d %d %d\n", el2edInfo[i].edge1, el2edInfo[i].edge2, el2edInfo[i].edge3);
-    }
-}
+// //This section is not required unless you want to debug the code
+// int main (int argc, char** argv)
+// {
+//     int i;
+//     int dummy;
+//     parse_input_file_(&dummy, &dummy, &dummy);
+//     label_the_edges_();
+//     for(i = 0; i < ineArrayLength; i++)
+//     {
+//         printf("%d\t%d\t%d\t%d\n", ineInfo[i].element, ineInfo[i].nodes[0], ineInfo[i].nodes[1], ineInfo[i].edgeNumber);
+//     }
+//     printf("element\t\tedge number (1) (2) (3)\n");
+//     for(i = 0; i < elementsCount; i++)
+//     {
+//         printf("\t%d", el2edInfo[i].element);
+//         printf("\t\t%d %d %d\n", el2edInfo[i].edge1, el2edInfo[i].edge2, el2edInfo[i].edge3);
+//     }
+// }
