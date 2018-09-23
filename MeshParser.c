@@ -77,11 +77,23 @@ ElementInfo* elementsInfo = NULL;
 typedef struct
 {
     int indicator;
+    int indicator2;
     int nodes[2];
     int element;
     int edgeNumber;
 }IneInfo;
-IneInfo* ineInfo;
+IneInfo* ineInfo = NULL;
+
+//Element-to-Edge (El2Ed) Info struct
+typedef struct
+{
+    int element;
+    int edge1;
+    int edge2;
+    int edge3;
+}El2EdInfo;
+El2EdInfo* el2edInfo = NULL;
+El2EdInfo* el2edInfo_output = NULL;
 
 int versionCodeMacro = 0;
 int versionCodeMicro = 0;
@@ -100,6 +112,11 @@ const char* physicalNameEndKeyword = "$EndPhysicalNames";
 int compare_indicator(const void* a, const void* b)
 {
     return ((IneInfo*)a)->indicator - ((IneInfo*)b)->indicator;
+}
+
+int compare_element(const void* a, const void* b)
+{
+    return ((IneInfo*)a)->element - ((IneInfo*)b)->element;
 }
 
 int count_string_length(const char* str)
@@ -144,6 +161,20 @@ void free_memory_()
         printf("Freeing ineInfo...\n");
         free(ineInfo);
         ineInfo = NULL;
+    }
+
+    if(el2edInfo)
+    {
+        printf("Freeing el2edInfo...\n");
+        free(el2edInfo);
+        el2edInfo = NULL;
+    }
+
+    if(el2edInfo_output)
+    {
+        printf("Freeing el2edInfo_output...\n");
+        free(el2edInfo_output);
+        el2edInfo_output = NULL;
     }
 }
 
@@ -352,37 +383,77 @@ void create_ine_array_()
         {
             for(j = 0; j < 3; j++)
             {
-                ineInfo[k * 3 + j].element = elementsInfo[i].number;
-                ineInfo[k * 3 + j].nodes[0] = elementsInfo[i].nodes[j];
-                ineInfo[k * 3 + j].nodes[1] = j + 1 < 3 ? elementsInfo[i].nodes[j + 1] : elementsInfo[i].nodes[0];
-                ineInfo[k * 3 + j].indicator = ineInfo[k * 3 + j].nodes[0] * ineInfo[k * 3 + j].nodes[1];
+                ineInfo[k + j].element = elementsInfo[i].number;
+                ineInfo[k + j].nodes[0] = elementsInfo[i].nodes[j];
+                ineInfo[k + j].nodes[1] = j + 1 < 3 ? elementsInfo[i].nodes[j + 1] : elementsInfo[i].nodes[0];
+                ineInfo[k + j].indicator = ineInfo[k + j].nodes[0] * ineInfo[k + j].nodes[1];
+                ineInfo[k + j].indicator2 = ineInfo[k + j].nodes[0] + ineInfo[k + j].nodes[1];
             }
-            k++;
+            k += 3;
         }
     }
 }
 
-void sort_ine_array_()
+void sort_ine_array_by_indicator_()
 {
     qsort(ineInfo, ineArrayLength, sizeof(IneInfo), compare_indicator);
+}
+
+void sort_ine_array_by_element_()
+{
+    qsort(ineInfo, ineArrayLength, sizeof(IneInfo), compare_element);
+}
+
+void create_el2ed_array()
+{
+    int i = 0;
+    el2edInfo = (El2EdInfo*) calloc(elementsCount, sizeof(El2EdInfo));
+    for(i = 0; i < ineArrayLength; i += 3)
+    {
+        int element = ineInfo[i].element;
+        if(element)
+        {
+            int edge1 = ineInfo[i].edgeNumber;
+            int edge2 = 0;
+            int edge3 = 0;
+            if(ineInfo[i].nodes[1] == ineInfo[i + 1].nodes[0])
+            {
+                edge2 = ineInfo[i + 1].edgeNumber; 
+                edge3 = ineInfo[i + 2].edgeNumber;
+            }
+            else
+            {
+                edge2 = ineInfo[i + 2].edgeNumber;
+                edge3 = ineInfo[i + 1].edgeNumber;
+            }
+            el2edInfo[i / 3].element = element;
+            el2edInfo[i / 3].edge1 = edge1;
+            el2edInfo[i / 3].edge2 = edge2;
+            el2edInfo[i / 3].edge3 = edge3;
+        }
+    }
 }
 
 void label_the_edges_()
 {
     int i;
     int previousIndicator = 0;
+    int previousIndicator2 = 0;
     int label = 0;
     create_ine_array_();
-    sort_ine_array_();
+    sort_ine_array_by_indicator_();
     for(i = 0; i < ineArrayLength; i++)
     {
-        if(ineInfo[i].indicator != previousIndicator)
+        if(ineInfo[i].indicator != previousIndicator || ineInfo[i].indicator2 != previousIndicator2)
         {
             previousIndicator = ineInfo[i].indicator;
+            previousIndicator2 = ineInfo[i].indicator2;
             label++;
         }
         ineInfo[i].edgeNumber = label;
     }
+    sort_ine_array_by_element_();
+    create_el2ed_array();
 }
 
 // void retrieve_read_data_(PhysicalNameInfo* out_physicalNamesInfo, NodeInfo* out_nodesInfo, ElementInfo* out_elementsInfo)
@@ -399,16 +470,20 @@ void label_the_edges_()
 // }
 
 //This section is not required unless you want to debug the code
-// int main (int argc, char** argv)
-// {
-//     int i;
-//     int dummy;
-//     parse_input_file_(&dummy, &dummy, &dummy);
-//     label_the_edges_();
-//     printf("indicator\tnodes\telement\tedge number\n");
-//     for(i = 0; i < ineArrayLength; i++)
-//     {
-//         printf("\t%d\t  %d %d\t  %d\t  %d\n", ineInfo[i].indicator, ineInfo[i].nodes[0], ineInfo[i].nodes[1], ineInfo[i].element, ineInfo[i].edgeNumber);
-//     }
-// }
-
+int main (int argc, char** argv)
+{
+    int i;
+    int dummy;
+    parse_input_file_(&dummy, &dummy, &dummy);
+    label_the_edges_();
+    for(i = 0; i < ineArrayLength; i++)
+    {
+        printf("%d\t%d\t%d\t%d\n", ineInfo[i].element, ineInfo[i].nodes[0], ineInfo[i].nodes[1], ineInfo[i].edgeNumber);
+    }
+    printf("element\t\tedge number (1) (2) (3)\n");
+    for(i = 0; i < elementsCount; i++)
+    {
+        printf("\t%d", el2edInfo[i].element);
+        printf("\t\t%d %d %d\n", el2edInfo[i].edge1, el2edInfo[i].edge2, el2edInfo[i].edge3);
+    }
+}
